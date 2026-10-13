@@ -343,7 +343,8 @@ pip install -r ComfyUI-GGUF/requirements.txt</pre><button class="copy" type="but
   <section id="workflow">
     <div class="sh"><span class="num">04</span><h2>Load the workflow</h2><span class="time">~2 min</span></div>
     <ol>
-      <li><b>Restart ComfyUI</b> so it sees the new files: <span class="win">close the black window, then run <code>run_nvidia_gpu.bat</code> again.</span><span class="lin"><code>Ctrl + C</code> in the terminal, then start it again.</span></li>
+      <li>Click on the ComfyUI page and press <code>R</code> so it sees the new files.</li>
+      <li class="t-gguf"><b>GGUF only:</b> restart ComfyUI once so the new GGUF node loads: <span class="win">close the black window, then run <code>run_nvidia_gpu.bat</code> again.</span><span class="lin"><code>Ctrl + C</code> in the terminal, then start it again.</span></li>
       <li>Open <b>Workflow → Browse Templates</b> and search <b>Z-Image Turbo</b>.<br>
         <span class="dm">Not listed? Download <a href="https://raw.githubusercontent.com/Comfy-Org/workflow_templates/main/templates/image_z_image_turbo.json" download>image_z_image_turbo.json</a> and drag it onto the ComfyUI page.</span></li>
       <li class="t-fp8">Click the model loader box and pick <code>z_image_turbo_fp8_e4m3fn.safetensors</code>.</li>
@@ -373,7 +374,7 @@ pip install -r ComfyUI-GGUF/requirements.txt</pre><button class="copy" type="but
   <section id="fix">
     <div class="sh"><span class="num">??</span><h2>If something goes wrong</h2></div>
     <div class="err"><div class="e"><span class="tag r">ERR</span>Red box on a node / "value not in list"</div>
-      <div class="f"><span class="tag g">FIX</span>A file is in the wrong folder, or ComfyUI wasn't restarted. Check step 03, then restart.</div></div>
+      <div class="f"><span class="tag g">FIX</span>A file is in the wrong folder, or ComfyUI hasn't refreshed. Check step 03, then press <code>R</code> on the ComfyUI page.</div></div>
     <div class="err"><div class="e"><span class="tag r">ERR</span>CUDA out of memory</div>
       <div class="f"><span class="tag g">FIX</span>Pick the next tier down in step 01 and download that model. Close games and other GPU-heavy apps.</div></div>
     <div class="err"><div class="e"><span class="tag r">ERR</span>Missing node type / template not found</div>
