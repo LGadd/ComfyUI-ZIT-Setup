@@ -1,161 +1,429 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-os="win" data-tier="bf16">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Free AI Images Setup</title>
-<meta name="description" content="Make AI images for free on your own NVIDIA GPU with Z-Image Turbo and ComfyUI. Step-by-step setup.">
+<meta name="description" content="Make AI images for free on your own NVIDIA GPU with Z-Image Turbo and ComfyUI. Windows and Linux setup.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
+/* Colours and fonts match the video kit (src/kit-terminal.tsx). */
 :root {
-  --bg: #f7f7f5; --panel: #ffffff; --text: #16181d; --dim: #5b6170; --line: #e2e3e8;
-  --accent: #2563eb; --green: #15803d; --amber: #b45309; --code: #f0f1f4;
-}
-@media (prefers-color-scheme: dark) {
-  :root { --bg: #0d0f14; --panel: #161a22; --text: #ededed; --dim: #9aa1ae; --line: #262b36;
-    --accent: #60a5fa; --green: #3ddc84; --amber: #f5a524; --code: #1e232d; }
+  --bg: #111111; --panel: #1A1A1A; --panel2: #222222; --term: #161616; --bar: #1E1E1E; --line: #2E2E2E;
+  --text: #EDEDED; --soft: #C9C9C9; --dim: #7C7C7C;
+  --green: #3DDC84; --red: #FF4D4D; --blue: #3B82F6; --amber: #F5A524;
+  --title: "Archivo Black", Impact, sans-serif; --sans: Inter, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--text);
-  font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-main { max-width: 760px; margin: 0 auto; padding: 40px 16px 80px; }
-h1 { font-size: clamp(30px, 6vw, 44px); line-height: 1.15; margin: 0 0 10px; }
-h2 { font-size: 24px; margin: 48px 0 12px; display: flex; gap: 12px; align-items: center; }
-h2 .n { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #fff;
-  display: grid; place-items: center; font-size: 17px; }
-h3 { font-size: 18px; margin: 24px 0 8px; }
-p.lead { color: var(--dim); font-size: 19px; margin: 0 0 24px; }
-a { color: var(--accent); }
-code { font: 0.9em ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace; background: var(--code);
-  padding: 2px 6px; border-radius: 5px; overflow-wrap: anywhere; }
-pre { background: var(--code); padding: 14px 16px; border-radius: 10px; overflow-x: auto; }
-pre code { padding: 0; background: none; }
-.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin: 14px 0; }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
-.chip { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 4px 12px; font-size: 14px; color: var(--dim); }
-table { width: 100%; border-collapse: collapse; font-size: 15px; }
-th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { color: var(--dim); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
-.scroll { overflow-x: auto; }
-.btn { display: inline-block; background: var(--accent); color: #fff; text-decoration: none; font-weight: 600;
-  padding: 8px 14px; border-radius: 8px; font-size: 15px; margin: 4px 6px 4px 0; }
-.note { border-left: 4px solid var(--amber); }
-.ok { border-left: 4px solid var(--green); }
-ol li, ul li { margin: 6px 0; }
-.big { font-size: 28px; font-weight: 800; color: var(--accent); }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
-.grid .card { margin: 0; text-align: center; }
-.grid .lbl { color: var(--dim); font-size: 14px; }
-footer { margin-top: 60px; color: var(--dim); font-size: 14px; }
+html { scroll-padding-top: 90px; }
+body { margin: 0; color: var(--text); font: 400 17px/1.65 var(--sans); background-color: var(--bg);
+  background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: 60px 60px; }
+a { color: var(--blue); text-underline-offset: 3px; }
+b { font-weight: 600; color: #fff; }
+main { max-width: 820px; margin: 0 auto; padding: 0 16px 100px; }
+
+/* Show only the chosen OS / VRAM tier. */
+html[data-os="win"] .lin, html[data-os="lin"] .win { display: none !important; }
+html:not([data-tier="bf16"]) .t-bf16, html:not([data-tier="fp8"]) .t-fp8, html:not([data-tier="gguf"]) .t-gguf { display: none !important; }
+
+/* OS switch */
+.osbar { position: sticky; top: 0; z-index: 10; background: rgba(17,17,17,.92); backdrop-filter: blur(8px); border-bottom: 2px solid var(--line); }
+.osbar-in { max-width: 820px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 14px; }
+.osbar-lbl { font: 700 12px var(--mono); letter-spacing: .14em; color: var(--dim); text-transform: uppercase; white-space: nowrap; }
+.osswitch { flex: 1; display: grid; grid-template-columns: 1fr 1fr; border: 2px solid var(--line); background: var(--panel); }
+.osswitch button { all: unset; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 12px 10px; font: 800 17px var(--sans); color: var(--dim); letter-spacing: .02em; transition: background .15s, color .15s; }
+.osswitch button:hover { color: var(--text); background: var(--panel2); }
+.osswitch button[aria-pressed="true"] { background: var(--amber); color: #111; }
+.osswitch button:focus-visible { outline: 2px solid var(--blue); outline-offset: -4px; }
+.osswitch svg { width: 18px; height: 18px; flex: none; }
+.osswitch .hint { font: 700 12px var(--mono); color: var(--amber); border: 1px solid var(--amber); padding: 1px 6px; }
+.osswitch button[aria-pressed="true"] .hint { display: none; }
+@media (max-width: 560px) { .osbar-lbl { display: none; } .osswitch .hint { display: none; } .osswitch button:not([aria-pressed="true"]) { color: var(--text); } }
+
+/* Hero */
+header { padding: 56px 0 8px; }
+.kicker { font: 700 13px var(--mono); color: var(--amber); letter-spacing: .14em; text-transform: uppercase; }
+h1 { font: 400 clamp(38px, 8.5vw, 72px)/0.98 var(--title); margin: 14px 0 18px; letter-spacing: -.01em; text-transform: uppercase; }
+h1 .free { color: var(--green); }
+.lead { color: var(--soft); font-size: 19px; max-width: 620px; margin: 0; }
+
+.term { background: var(--term); border: 2px solid var(--line); border-radius: 4px; margin: 32px 0 0; box-shadow: 0 30px 80px rgba(0,0,0,.55); overflow: hidden; }
+.term-top { display: flex; justify-content: space-between; gap: 12px; padding: 9px 16px; background: var(--bar); border-bottom: 2px solid var(--line);
+  font: 500 13px var(--mono); color: var(--dim); }
+.term-body { padding: 16px 18px; font: 500 15px/1.75 var(--mono); color: var(--soft); min-height: 210px; }
+.term-body div { white-space: pre-wrap; overflow-wrap: anywhere; opacity: 0; animation: show .01s forwards; }
+.term-foot { display: flex; justify-content: space-between; padding: 8px 16px; border-top: 2px solid var(--line); font: 500 13px var(--mono); color: var(--dim); }
+.p { color: var(--amber); } .ok { color: var(--green); } .dm { color: var(--dim); }
+@keyframes show { to { opacity: 1; } }
+.caret { display: inline-block; width: .6em; background: var(--text); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); border: 2px solid var(--line); margin-top: 18px; background: var(--panel); }
+.stats div { padding: 14px 16px; border-right: 2px solid var(--line); }
+.stats div:last-child { border-right: 0; }
+.stats strong { display: block; font: 800 24px var(--sans); }
+.stats span { font: 500 12px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .08em; }
+@media (max-width: 620px) { .stats { grid-template-columns: 1fr 1fr; } .stats div:nth-child(2) { border-right: 0; } .stats div:nth-child(-n+2) { border-bottom: 2px solid var(--line); } }
+
+/* Steps */
+.toc { display: flex; flex-wrap: wrap; gap: 0; margin: 36px 0 0; border: 2px solid var(--line); background: var(--panel); }
+.toc a { flex: 1 1 auto; padding: 10px 14px; font: 500 13px var(--mono); color: var(--dim); text-decoration: none; border-right: 2px solid var(--line); white-space: nowrap; }
+.toc a:last-child { border-right: 0; }
+@media (max-width: 620px) { .toc { display: grid; grid-template-columns: repeat(3, 1fr); } .toc a { border-bottom: 2px solid var(--line); } }
+.toc a:hover { color: var(--text); background: var(--panel2); }
+.toc a span { color: var(--amber); }
+
+section { margin-top: 64px; }
+.sh { display: flex; align-items: stretch; border-bottom: 2px solid var(--line); margin-bottom: 20px; }
+.sh .num { font: 700 15px var(--mono); color: #111; background: var(--amber); padding: 8px 12px; display: flex; align-items: center; }
+.sh h2 { flex: 1; margin: 0; padding: 6px 14px; font: 800 26px/1.3 var(--sans); }
+.sh .time { font: 500 13px var(--mono); color: var(--dim); align-self: center; white-space: nowrap; }
+h3 { font: 700 14px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .1em; margin: 28px 0 10px; }
+ol { padding-left: 0; list-style: none; counter-reset: s; }
+ol > li { counter-increment: s; position: relative; padding-left: 42px; margin: 12px 0; }
+ol > li::before { content: counter(s, decimal-leading-zero); position: absolute; left: 0; top: 2px; font: 700 13px var(--mono); color: var(--amber);
+  border: 1px solid var(--line); background: var(--panel); padding: 1px 5px; }
+
+code { font: 500 .88em var(--mono); background: var(--panel2); border: 1px solid var(--line); padding: 1px 6px; color: var(--text); overflow-wrap: anywhere; }
+.cmd { position: relative; background: var(--term); border: 2px solid var(--line); border-left: 3px solid var(--amber); margin: 14px 0; }
+.cmd pre { margin: 0; padding: 40px 16px 14px; overflow-x: auto; font: 500 14px/1.7 var(--mono); color: var(--soft); }
+.cmd .copy { all: unset; cursor: pointer; position: absolute; top: 8px; right: 8px; font: 700 11px var(--mono); letter-spacing: .08em;
+  color: var(--dim); border: 1px solid var(--line); background: var(--panel); padding: 4px 8px; text-transform: uppercase; }
+.cmd .copy:hover { color: var(--text); border-color: var(--dim); }
+.cmd .copy.done { color: var(--green); border-color: var(--green); }
+
+.panel { background: var(--panel); border: 2px solid var(--line); border-radius: 4px; padding: 18px 20px; margin: 14px 0; }
+.panel > :first-child { margin-top: 0; } .panel > :last-child { margin-bottom: 0; }
+.warn { border-color: var(--amber); box-shadow: 0 0 30px rgba(245,165,36,.08); }
+.tag { display: inline-block; font: 700 11px var(--mono); letter-spacing: .1em; padding: 2px 7px; margin-right: 8px; vertical-align: 2px; color: #111; }
+.tag.a { background: var(--amber); } .tag.g { background: var(--green); } .tag.r { background: var(--red); } .tag.b { background: var(--blue); color: #fff; }
+
+/* VRAM picker */
+.tiers { display: grid; gap: 10px; }
+.tier { all: unset; cursor: pointer; display: block; background: var(--panel); border: 2px solid var(--line); padding: 14px 18px; transition: border-color .15s, box-shadow .15s; }
+.tier:hover { border-color: var(--dim); }
+.tier:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.tier .row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.tier .card { font: 800 22px var(--sans); }
+.tier .build { font: 700 14px var(--mono); color: var(--c); }
+.tier .eg { font: 500 13px var(--mono); color: var(--dim); margin-top: 4px; }
+.tier .meter { height: 6px; background: var(--panel2); margin-top: 12px; }
+.tier .meter i { display: block; height: 100%; width: var(--w); background: var(--c); opacity: .35; transition: opacity .15s; }
+.tier .pick { font: 700 11px var(--mono); letter-spacing: .1em; color: var(--dim); border: 1px solid var(--line); padding: 2px 7px; }
+.tier[aria-pressed="true"] { border-color: var(--c); box-shadow: 0 0 0 1px var(--c), 0 0 34px color-mix(in srgb, var(--c) 18%, transparent); }
+.tier[aria-pressed="true"] .meter i { opacity: 1; }
+.tier[aria-pressed="true"] .pick { background: var(--c); color: #111; border-color: var(--c); }
+.tier[aria-pressed="true"] .pick::before { content: "✓ "; }
+
+/* Files */
+.file { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; align-items: center; background: var(--panel); border: 2px solid var(--line);
+  border-left: 3px solid var(--blue); padding: 14px 16px; margin: 10px 0; }
+.file .fn { font: 700 14px var(--mono); overflow-wrap: anywhere; }
+.file .what { font: 600 13px var(--sans); color: var(--dim); }
+.file .dest { grid-column: 1 / -1; font: 500 13px var(--mono); color: var(--blue); overflow-wrap: anywhere; }
+.file .dest::before { content: "→ "; color: var(--amber); }
+.dl { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font: 700 13px var(--mono); color: #111; background: var(--green);
+  padding: 8px 12px; white-space: nowrap; }
+.dl:hover { filter: brightness(1.1); }
+.dl small { font-weight: 500; opacity: .75; }
+@media (max-width: 560px) { .file { grid-template-columns: 1fr; } .dl { justify-self: start; } }
+
+.tree { background: var(--term); border: 2px solid var(--line); padding: 14px 16px; font: 500 14px/1.7 var(--mono); color: var(--dim); overflow-x: auto; white-space: pre; margin: 14px 0; }
+.tree .f { color: var(--text); } .tree .d { color: var(--blue); }
+
+/* Settings */
+.cfg { background: var(--term); border: 2px solid var(--line); font: 500 15px var(--mono); }
+.cfg-top { padding: 8px 16px; background: var(--bar); border-bottom: 2px solid var(--line); color: var(--dim); font-size: 13px; }
+.cfg-row { display: flex; justify-content: space-between; gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.cfg-row:last-child { border-bottom: 0; }
+.cfg-row .k { color: var(--dim); }
+.cfg-row .v { color: var(--text); font-weight: 700; }
+.cfg-row .v.big { color: var(--blue); font: 800 24px var(--sans); line-height: 1; }
+
+/* Troubleshooting */
+.err { background: var(--panel); border: 2px solid var(--line); margin: 10px 0; }
+.err .e { padding: 12px 16px; font: 500 14px var(--mono); color: var(--text); border-bottom: 1px solid var(--line); }
+.err .f { padding: 12px 16px; }
+
+footer { margin-top: 80px; padding-top: 18px; border-top: 2px solid var(--line); font: 500 13px/1.8 var(--mono); color: var(--dim); }
+footer a { color: var(--soft); }
 </style>
 </head>
 <body>
+
+<nav class="osbar" aria-label="Choose your operating system">
+  <div class="osbar-in">
+    <span class="osbar-lbl">Setup for</span>
+    <div class="osswitch" role="group" aria-label="Operating system">
+      <button type="button" data-set-os="win" aria-pressed="true">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M0 0h7.5v7.5H0zM8.5 0H16v7.5H8.5zM0 8.5h7.5V16H0zM8.5 8.5H16V16H8.5z"/></svg>
+        Windows <span class="hint">← switch</span>
+      </button>
+      <button type="button" data-set-os="lin" aria-pressed="false">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1.5 3.5l5 4.5-5 4.5M8 13h6.5"/></svg>
+        Linux <span class="hint">switch →</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
 <main>
-  <h1>Free AI images on your own GPU</h1>
-  <p class="lead">Z-Image Turbo + ComfyUI. No subscription, no credits, no queue. About 20 minutes to set up, most of it waiting for downloads.</p>
-  <div class="chips">
-    <span class="chip">Z-Image Turbo · 6B · Apache 2.0</span>
-    <span class="chip">Commercial use OK</span>
-    <span class="chip">NVIDIA 8–16 GB</span>
-    <span class="chip">3.4 s / image on an RTX 5070 Ti</span>
-  </div>
+  <header>
+    <div class="kicker">// setup guide · z-image turbo + comfyui</div>
+    <h1>AI images.<br>On your GPU.<br><span class="free">Free.</span></h1>
+    <p class="lead">No subscription, no credits, no queue. About <b>20 minutes</b> to set up, and most of that is waiting for downloads.
+      <span class="win">This page shows the <b>Windows</b> setup. On Linux? Use the switch at the top.</span>
+      <span class="lin">This page shows the <b>Linux</b> setup. On Windows? Use the switch at the top.</span></p>
 
-  <h2><span class="n">1</span>Check your graphics card</h2>
-  <p>You need an NVIDIA card. Find its VRAM: on Windows, open Task Manager → Performance → GPU and read “Dedicated GPU memory”. On Linux, run <code>nvidia-smi</code>.</p>
-  <p>Your VRAM decides which model file you download in step 3:</p>
-  <div class="scroll"><table>
-    <tr><th>Your VRAM</th><th>Version</th><th>File size</th><th>Example cards</th></tr>
-    <tr><td><b>16 GB+</b></td><td>BF16 (full quality)</td><td>12.3 GB</td><td>4080, 4090, 5070 Ti, 5080, 3090</td></tr>
-    <tr><td><b>12 GB</b></td><td>FP8</td><td>6.2 GB</td><td>3060 12 GB, 4070, 5070</td></tr>
-    <tr><td><b>8 GB or less</b></td><td>GGUF Q4/Q5</td><td>5.0–5.6 GB</td><td>3050, 3060 Ti, 4060, laptop GPUs</td></tr>
-  </table></div>
+    <div class="term" aria-hidden="true">
+      <div class="term-top"><span>z-image turbo — <span class="win">C:\ComfyUI_windows_portable</span><span class="lin">~/ComfyUI</span></span><span>RTX 5070 Ti · 16 GB</span></div>
+      <div class="term-body">
+        <div style="animation-delay:.2s"><span class="p"><span class="win">PS&gt;</span><span class="lin">$</span></span> nvidia-smi</div>
+        <div style="animation-delay:.7s">  GPU 0: RTX 5070 Ti · 16 GB</div>
+        <div style="animation-delay:1.2s">  z-image-turbo · 6B DiT · released 2025-11-27</div>
+        <div style="animation-delay:1.6s" class="ok">✓ license: Apache-2.0 · commercial use ok</div>
+        <div style="animation-delay:2.2s"><span class="p"><span class="win">PS&gt;</span><span class="lin">$</span></span> steps 8 · cfg 1.0 · res_multistep · simple</div>
+        <div style="animation-delay:2.9s" class="ok">✓ Prompt executed in 3.4 seconds</div>
+        <div style="animation-delay:3.3s"><span class="p"><span class="win">PS&gt;</span><span class="lin">$</span></span> <span class="caret">&nbsp;</span></div>
+      </div>
+      <div class="term-foot"><span class="ok">[ok] comfyui</span><span class="win">windows · portable</span><span class="lin">linux · venv</span></div>
+    </div>
 
-  <h2><span class="n">2</span>Install ComfyUI</h2>
-  <h3>Windows or Mac (easiest)</h3>
-  <ol>
-    <li>Download <b>ComfyUI Desktop</b>: <a class="btn" href="https://www.comfy.org/download">comfy.org/download</a></li>
-    <li>Run the installer, pick <b>NVIDIA</b> as the GPU, and accept the default folders.</li>
-    <li>When it opens, you’re done. Note the install folder it showed you. That’s your <code>ComfyUI</code> folder below.</li>
-  </ol>
-  <h3>Linux</h3>
-<pre><code>git clone https://github.com/comfyanonymous/ComfyUI
-cd ComfyUI
-python -m venv venv &amp;&amp; source venv/bin/activate
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
-pip install -r requirements.txt
-python main.py</code></pre>
-  <p>Then open <a href="http://127.0.0.1:8188">http://127.0.0.1:8188</a> in your browser.</p>
-  <div class="card note">Already have ComfyUI? <b>Update it first.</b> Z-Image Turbo needs a recent version (Desktop: it updates itself; manual install: <code>git pull</code>).</div>
+    <div class="stats">
+      <div><strong>6B</strong><span>parameters</span></div>
+      <div><strong style="color:var(--green)">Apache 2.0</strong><span>commercial ok</span></div>
+      <div><strong>8</strong><span>steps</span></div>
+      <div><strong style="color:var(--blue)">3.4 s</strong><span>per image*</span></div>
+    </div>
+    <p class="dm" style="font:500 12px var(--mono);margin:8px 0 0">* measured on an RTX 5070 Ti 16 GB, 1024×1024</p>
 
-  <h2><span class="n">3</span>Download three files</h2>
-  <p>A model, a text encoder and a VAE. Put each one in its own folder inside <code>ComfyUI/models/</code>.</p>
+    <div class="toc">
+      <a href="#gpu"><span>01</span> gpu</a><a href="#install"><span>02</span> install</a><a href="#files"><span>03</span> files</a>
+      <a href="#workflow"><span>04</span> workflow</a><a href="#settings"><span>05</span> settings</a><a href="#fix"><span>??</span> fixes</a>
+    </div>
+  </header>
 
-  <div class="card">
-    <h3 style="margin-top:0">① The model → <code>models/diffusion_models/</code></h3>
-    <p>Pick <b>one</b>, based on your VRAM from step 1:</p>
-    <a class="btn" href="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors">16 GB: BF16 (12.3 GB)</a>
-    <a class="btn" href="https://huggingface.co/drbaph/Z-Image-Turbo-FP8/resolve/main/z_image_turbo_fp8_e4m3fn.safetensors">12 GB: FP8 (6.2 GB)</a>
-    <a class="btn" href="https://huggingface.co/unsloth/Z-Image-Turbo-GGUF/resolve/main/z-image-turbo-Q4_K_M.gguf">≤8 GB: GGUF Q4_K_M (5.0 GB)</a>
-    <p style="margin-bottom:0;color:var(--dim);font-size:15px">GGUF users: <code>.gguf</code> files go in <code>models/unet/</code> instead, and need one extra step (see “Using GGUF” below).</p>
-  </div>
+  <!-- 01 -->
+  <section id="gpu">
+    <div class="sh"><span class="num">01</span><h2>Check your graphics card</h2><span class="time">~1 min</span></div>
+    <p>You need an <b>NVIDIA</b> card (GTX 20 series or newer). Find out how much VRAM it has:</p>
+    <p class="win">Press <code>Ctrl + Shift + Esc</code> → <b>Performance</b> → <b>GPU</b>. Read <b>Dedicated GPU memory</b>.</p>
+    <div class="lin">
+      <div class="cmd"><pre>nvidia-smi --query-gpu=name,memory.total --format=csv</pre><button class="copy" type="button">copy</button></div>
+    </div>
+    <p><b>Pick your card below.</b> The rest of the page will show the right download for it.</p>
+    <div class="tiers" role="group" aria-label="Your VRAM">
+      <button class="tier" type="button" data-set-tier="bf16" aria-pressed="true" style="--c:var(--green);--w:100%">
+        <div class="row"><span class="card">16 GB or more</span><span class="pick">PICK</span></div>
+        <div class="row"><span class="build">BF16 · full quality · 12.3 GB file</span></div>
+        <div class="eg">RTX 3090 · 4080 · 4090 · 5070 Ti · 5080 · 5090</div>
+        <div class="meter"><i></i></div>
+      </button>
+      <button class="tier" type="button" data-set-tier="fp8" aria-pressed="false" style="--c:var(--blue);--w:66%">
+        <div class="row"><span class="card">12 GB</span><span class="pick">PICK</span></div>
+        <div class="row"><span class="build">FP8 · ~8 GB in use · 6.2 GB file</span></div>
+        <div class="eg">RTX 3060 12 GB · 4070 · 5070</div>
+        <div class="meter"><i></i></div>
+      </button>
+      <button class="tier" type="button" data-set-tier="gguf" aria-pressed="false" style="--c:var(--amber);--w:40%">
+        <div class="row"><span class="card">8 GB or less</span><span class="pick">PICK</span></div>
+        <div class="row"><span class="build">GGUF Q4 · 5–6 GB · 5.0 GB file</span></div>
+        <div class="eg">RTX 3050 · 3060 Ti · 4060 · laptop GPUs</div>
+        <div class="meter"><i></i></div>
+      </button>
+    </div>
+  </section>
 
-  <div class="card">
-    <h3 style="margin-top:0">② The text encoder → <code>models/text_encoders/</code></h3>
-    <a class="btn" href="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors">qwen_3_4b.safetensors</a>
-  </div>
+  <!-- 02 -->
+  <section id="install">
+    <div class="sh"><span class="num">02</span><h2>Install ComfyUI</h2><span class="time">~5 min</span></div>
 
-  <div class="card">
-    <h3 style="margin-top:0">③ The VAE → <code>models/vae/</code></h3>
-    <a class="btn" href="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors">ae.safetensors</a>
-  </div>
+    <div class="win">
+      <p>We'll use the official <b>portable</b> build. It has Python built in, so there's nothing else to install, and the folders are always in the same place.</p>
+      <ol>
+        <li>Download it: <a class="dl" href="https://github.com/comfyanonymous/ComfyUI/releases/latest/download/ComfyUI_windows_portable_nvidia.7z">ComfyUI_windows_portable_nvidia.7z <small>2.0 GB</small></a></li>
+        <li>Right-click the file → <b>Extract All</b> into <code>C:\</code>. On Windows 10, use <a href="https://7-zip.org">7-Zip</a>.<br>
+          You now have <code>C:\ComfyUI_windows_portable\</code>.</li>
+        <li>Double-click <code>run_nvidia_gpu.bat</code> in that folder. A black window opens and ComfyUI opens in your browser.</li>
+      </ol>
+      <div class="panel warn"><span class="tag a">NOTE</span>Won't start? Update your NVIDIA driver from the <b>NVIDIA App</b> first. If Windows blocks the file, right-click it → <b>Properties</b> → tick <b>Unblock</b>.</div>
+    </div>
 
-  <p>Your folders should end up like this (16 GB example):</p>
-<pre><code>ComfyUI/models/
-├── diffusion_models/
-│   └── z_image_turbo_bf16.safetensors
-├── text_encoders/
-│   └── qwen_3_4b.safetensors
-└── vae/
-    └── ae.safetensors</code></pre>
+    <div class="lin">
+      <p>You need <code>git</code>, Python 3.12 or 3.13, and a working NVIDIA driver (<code>nvidia-smi</code> runs).</p>
+      <div class="cmd"><pre>git clone https://github.com/Comfy-Org/ComfyUI ~/ComfyUI
+cd ~/ComfyUI
+python -m venv venv
+source venv/bin/activate
+pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu130
+pip install -r requirements.txt</pre><button class="copy" type="button">copy</button></div>
+      <p>Start it, then open <a href="http://127.0.0.1:8188">127.0.0.1:8188</a>:</p>
+      <div class="cmd"><pre>cd ~/ComfyUI &amp;&amp; source venv/bin/activate &amp;&amp; python main.py</pre><button class="copy" type="button">copy</button></div>
+      <div class="panel"><span class="tag b">FISH</span>Using fish shell? Use <code>source venv/bin/activate.fish</code> and replace <code>&amp;&amp;</code> with <code>; and</code>.</div>
+      <div class="panel warn"><span class="tag a">NOTE</span>Already have ComfyUI? Update it first with <code>cd ~/ComfyUI &amp;&amp; git pull &amp;&amp; pip install -r requirements.txt</code>. Z-Image Turbo needs a recent version.</div>
+    </div>
+  </section>
 
-  <h2><span class="n">4</span>Load the workflow</h2>
-  <ol>
-    <li>Restart ComfyUI so it sees the new files.</li>
-    <li>Open <b>Workflow → Browse Templates</b> and search <b>Z-Image Turbo</b>.<br>
-      Not there? Download <a href="https://raw.githubusercontent.com/Comfy-Org/workflow_templates/main/templates/image_z_image_turbo.json">image_z_image_turbo.json</a> and drag it onto the ComfyUI window.</li>
-    <li>Check each loader box shows your file name. If you used FP8, click the model box and pick the FP8 file.</li>
-    <li>Type a prompt and press <b>Run</b>. Your image appears on the right and is saved in <code>ComfyUI/output/</code>.</li>
-  </ol>
+  <!-- 03 -->
+  <section id="files">
+    <div class="sh"><span class="num">03</span><h2>Download three files</h2><span class="time">~10 min</span></div>
+    <p>A model, a text encoder and a VAE. Each one goes in its own folder inside
+      <code class="win">C:\ComfyUI_windows_portable\ComfyUI\models\</code><code class="lin">~/ComfyUI/models/</code>.</p>
 
-  <h2><span class="n">5</span>The settings that matter</h2>
-  <div class="grid">
-    <div class="card"><div class="big">8</div><div class="lbl">steps</div></div>
-    <div class="card"><div class="big">1.0</div><div class="lbl">CFG</div></div>
-    <div class="card"><div class="big" style="font-size:18px;padding:8px 0">res_multistep</div><div class="lbl">sampler</div></div>
-    <div class="card"><div class="big" style="font-size:18px;padding:8px 0">simple</div><div class="lbl">scheduler</div></div>
-    <div class="card"><div class="big" style="font-size:18px;padding:8px 0">1024×1024</div><div class="lbl">size</div></div>
-  </div>
-  <div class="card note"><b>Keep CFG at 1.</b> It’s a turbo model. Push CFG higher and images come out burnt and oversaturated. More steps doesn’t help much either; 8–9 is the sweet spot.</div>
+    <div class="win">
+      <div class="file t-bf16"><div><div class="what">① model · 16 GB tier</div><div class="fn">z_image_turbo_bf16.safetensors</div></div>
+        <a class="dl" href="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors">↓ download <small>12.3 GB</small></a>
+        <div class="dest">models\diffusion_models\</div></div>
+      <div class="file t-fp8"><div><div class="what">① model · 12 GB tier</div><div class="fn">z_image_turbo_fp8_e4m3fn.safetensors</div></div>
+        <a class="dl" href="https://huggingface.co/drbaph/Z-Image-Turbo-FP8/resolve/main/z_image_turbo_fp8_e4m3fn.safetensors">↓ download <small>6.2 GB</small></a>
+        <div class="dest">models\diffusion_models\</div></div>
+      <div class="file t-gguf"><div><div class="what">① model · 8 GB tier</div><div class="fn">z-image-turbo-Q4_K_M.gguf</div></div>
+        <a class="dl" href="https://huggingface.co/unsloth/Z-Image-Turbo-GGUF/resolve/main/z-image-turbo-Q4_K_M.gguf">↓ download <small>5.0 GB</small></a>
+        <div class="dest">models\unet\</div></div>
+      <div class="file"><div><div class="what">② text encoder</div><div class="fn">qwen_3_4b.safetensors</div></div>
+        <a class="dl" href="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors">↓ download <small>8.0 GB</small></a>
+        <div class="dest">models\text_encoders\</div></div>
+      <div class="file"><div><div class="what">③ VAE</div><div class="fn">ae.safetensors</div></div>
+        <a class="dl" href="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors">↓ download <small>0.3 GB</small></a>
+        <div class="dest">models\vae\</div></div>
+      <p>They land in your <b>Downloads</b> folder. Drag each one into the folder shown under it.</p>
+    </div>
 
-  <h2><span class="n">+</span>Using GGUF (8 GB cards)</h2>
-  <ol>
-    <li>Open <b>Manager → Custom Nodes Manager</b>, search <b>ComfyUI-GGUF</b> (by city96), install it and restart.</li>
-    <li>Put the <code>.gguf</code> file in <code>models/unet/</code>.</li>
-    <li>In the workflow, double-click empty canvas, add <b>Unet Loader (GGUF)</b>, pick your file, and connect its output where the old model loader’s output went. Delete the old loader.</li>
-  </ol>
-  <p>Got a bit more room? <a href="https://huggingface.co/unsloth/Z-Image-Turbo-GGUF/resolve/main/z-image-turbo-Q5_K_M.gguf">Q5_K_M (5.6 GB)</a> looks slightly better than Q4_K_M.</p>
+    <div class="lin">
+      <p>Copy and run this block. <code>wget -c</code> resumes if a download breaks.</p>
+      <div class="cmd t-bf16"><pre>cd ~/ComfyUI/models
+wget -c -P diffusion_models https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors
+wget -c -P text_encoders https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors
+wget -c -P vae https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors</pre><button class="copy" type="button">copy</button></div>
+      <div class="cmd t-fp8"><pre>cd ~/ComfyUI/models
+wget -c -P diffusion_models https://huggingface.co/drbaph/Z-Image-Turbo-FP8/resolve/main/z_image_turbo_fp8_e4m3fn.safetensors
+wget -c -P text_encoders https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors
+wget -c -P vae https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors</pre><button class="copy" type="button">copy</button></div>
+      <div class="cmd t-gguf"><pre>cd ~/ComfyUI/models
+wget -c -P unet https://huggingface.co/unsloth/Z-Image-Turbo-GGUF/resolve/main/z-image-turbo-Q4_K_M.gguf
+wget -c -P text_encoders https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors
+wget -c -P vae https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors</pre><button class="copy" type="button">copy</button></div>
+    </div>
 
-  <h2><span class="n">?</span>If something goes wrong</h2>
-  <div class="card"><b>Red box / “value not in list”</b>: a file is in the wrong folder or ComfyUI wasn’t restarted. Re-check step 3, then restart.</div>
-  <div class="card"><b>Out of memory (OOM)</b>: use the smaller model for your card from step 1, and close games or other GPU-heavy apps.</div>
-  <div class="card"><b>Template missing / unknown node</b>: ComfyUI is too old. Update it.</div>
-  <div class="card"><b>Images look burnt or neon</b>: CFG is above 1. Set it back to 1.0.</div>
-  <div class="card ok"><b>First image is slow?</b> Normal. The first run loads the models into memory. After that, each image takes seconds.</div>
+    <h3>Check your folders</h3>
+    <div class="tree"><span class="win">C:\ComfyUI_windows_portable\ComfyUI\models\</span><span class="lin">~/ComfyUI/models/</span>
+├── <span class="d t-bf16">diffusion_models</span><span class="d t-fp8">diffusion_models</span><span class="d t-gguf">unet</span>
+│   └── <span class="f t-bf16">z_image_turbo_bf16.safetensors</span><span class="f t-fp8">z_image_turbo_fp8_e4m3fn.safetensors</span><span class="f t-gguf">z-image-turbo-Q4_K_M.gguf</span>
+├── <span class="d">text_encoders</span>
+│   └── <span class="f">qwen_3_4b.safetensors</span>
+└── <span class="d">vae</span>
+    └── <span class="f">ae.safetensors</span></div>
+
+    <div class="t-gguf">
+      <h3>GGUF only: add the GGUF loader</h3>
+      <p>ComfyUI can't read <code>.gguf</code> files on its own. Install the <a href="https://github.com/city96/ComfyUI-GGUF">ComfyUI-GGUF</a> node:</p>
+      <div class="win">
+        <ol>
+          <li>Download <a href="https://github.com/city96/ComfyUI-GGUF/archive/refs/heads/main.zip">ComfyUI-GGUF (zip)</a> and extract it into <code>C:\ComfyUI_windows_portable\ComfyUI\custom_nodes\</code>.</li>
+          <li>In <code>C:\ComfyUI_windows_portable\</code>, click the address bar, type <code>powershell</code> and press Enter. Then run:</li>
+        </ol>
+        <div class="cmd"><pre>.\python_embeded\python.exe -m pip install -r .\ComfyUI\custom_nodes\ComfyUI-GGUF-main\requirements.txt</pre><button class="copy" type="button">copy</button></div>
+      </div>
+      <div class="lin">
+        <div class="cmd"><pre>cd ~/ComfyUI/custom_nodes
+git clone https://github.com/city96/ComfyUI-GGUF
+source ../venv/bin/activate
+pip install -r ComfyUI-GGUF/requirements.txt</pre><button class="copy" type="button">copy</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section id="workflow">
+    <div class="sh"><span class="num">04</span><h2>Load the workflow</h2><span class="time">~2 min</span></div>
+    <ol>
+      <li><b>Restart ComfyUI</b> so it sees the new files: <span class="win">close the black window, then run <code>run_nvidia_gpu.bat</code> again.</span><span class="lin"><code>Ctrl + C</code> in the terminal, then start it again.</span></li>
+      <li>Open <b>Workflow → Browse Templates</b> and search <b>Z-Image Turbo</b>.<br>
+        <span class="dm">Not listed? Download <a href="https://raw.githubusercontent.com/Comfy-Org/workflow_templates/main/templates/image_z_image_turbo.json" download>image_z_image_turbo.json</a> and drag it onto the ComfyUI page.</span></li>
+      <li class="t-fp8">Click the model loader box and pick <code>z_image_turbo_fp8_e4m3fn.safetensors</code>.</li>
+      <li class="t-gguf">Double-click empty space, search <b>Unet Loader (GGUF)</b> and add it. Pick your <code>.gguf</code> file, drag its <b>MODEL</b> output to where the old model loader was connected, then delete the old loader.</li>
+      <li>Type your prompt in the text box and press <b>Run</b>.</li>
+    </ol>
+    <div class="panel"><span class="tag g">DONE</span>Your image appears on the right and is saved in
+      <code class="win">ComfyUI\output\</code><code class="lin">~/ComfyUI/output/</code>. The first one is slow while the models load. After that, each image takes seconds.</div>
+  </section>
+
+  <!-- 05 -->
+  <section id="settings">
+    <div class="sh"><span class="num">05</span><h2>The settings that matter</h2><span class="time">read once</span></div>
+    <p>The template already uses these. If your images look wrong, check them first.</p>
+    <div class="cfg">
+      <div class="cfg-top">KSampler</div>
+      <div class="cfg-row"><span class="k">steps</span><span class="v big">8</span></div>
+      <div class="cfg-row"><span class="k">cfg</span><span class="v big">1.0</span></div>
+      <div class="cfg-row"><span class="k">sampler_name</span><span class="v">res_multistep</span></div>
+      <div class="cfg-row"><span class="k">scheduler</span><span class="v">simple</span></div>
+      <div class="cfg-row"><span class="k">width × height</span><span class="v">1024 × 1024</span></div>
+    </div>
+    <div class="panel warn"><span class="tag r">KEEP CFG AT 1</span>It's a turbo model. Push CFG higher and images come out burnt and oversaturated. More steps don't help much either; 8–9 is the sweet spot.</div>
+  </section>
+
+  <!-- ?? -->
+  <section id="fix">
+    <div class="sh"><span class="num">??</span><h2>If something goes wrong</h2></div>
+    <div class="err"><div class="e"><span class="tag r">ERR</span>Red box on a node / "value not in list"</div>
+      <div class="f"><span class="tag g">FIX</span>A file is in the wrong folder, or ComfyUI wasn't restarted. Check step 03, then restart.</div></div>
+    <div class="err"><div class="e"><span class="tag r">ERR</span>CUDA out of memory</div>
+      <div class="f"><span class="tag g">FIX</span>Pick the next tier down in step 01 and download that model. Close games and other GPU-heavy apps.</div></div>
+    <div class="err"><div class="e"><span class="tag r">ERR</span>Missing node type / template not found</div>
+      <div class="f"><span class="tag g">FIX</span>ComfyUI is too old.
+        <span class="win">Run <code>update\update_comfyui.bat</code> in the portable folder.</span>
+        <span class="lin">Run <code>git pull</code> in <code>~/ComfyUI</code>.</span></div></div>
+    <div class="err"><div class="e"><span class="tag r">ERR</span>Images look burnt, neon or deep-fried</div>
+      <div class="f"><span class="tag g">FIX</span>CFG is above 1. Set it back to <code>1.0</code>.</div></div>
+    <div class="err lin"><div class="e"><span class="tag r">ERR</span>pip can't find torch / "Torch not compiled with CUDA"</div>
+      <div class="f"><span class="tag g">FIX</span>Your Python is too new, or torch came from the wrong index. Make the venv with Python 3.12 or 3.13 and re-run the torch line from step 02.</div></div>
+    <div class="err win"><div class="e"><span class="tag r">ERR</span>Black window closes straight away</div>
+      <div class="f"><span class="tag g">FIX</span>Update your NVIDIA driver, then run <code>run_nvidia_gpu.bat</code> again. To read the error, open PowerShell in the folder and run <code>.\run_nvidia_gpu.bat</code>.</div></div>
+  </section>
 
   <footer>
-    Model: <a href="https://huggingface.co/Tongyi-MAI/Z-Image-Turbo">Z-Image Turbo</a> by Tongyi Lab (Alibaba), Apache 2.0.
-    Files from <a href="https://huggingface.co/Comfy-Org/z_image_turbo">Comfy-Org</a>, <a href="https://huggingface.co/drbaph/Z-Image-Turbo-FP8">drbaph</a> (FP8) and <a href="https://huggingface.co/unsloth/Z-Image-Turbo-GGUF">unsloth</a> (GGUF).
-    Official guide: <a href="https://docs.comfy.org/tutorials/image/z-image/z-image-turbo">docs.comfy.org</a>.
+    model: <a href="https://huggingface.co/Tongyi-MAI/Z-Image-Turbo">Z-Image Turbo</a> · Tongyi Lab (Alibaba) · Apache 2.0<br>
+    files: <a href="https://huggingface.co/Comfy-Org/z_image_turbo">Comfy-Org</a> · <a href="https://huggingface.co/drbaph/Z-Image-Turbo-FP8">drbaph</a> (fp8) · <a href="https://huggingface.co/unsloth/Z-Image-Turbo-GGUF">unsloth</a> (gguf)<br>
+    official guide: <a href="https://docs.comfy.org/tutorials/image/z-image/z-image-turbo">docs.comfy.org</a>
   </footer>
 </main>
+
+<script>
+const root = document.documentElement;
+const store = (k, v) => { try { v === undefined ? (v = localStorage.getItem(k)) : localStorage.setItem(k, v); } catch (e) {} return v; };
+
+function setOS(os, push) {
+  root.dataset.os = os;
+  document.querySelectorAll("[data-set-os]").forEach(b => b.setAttribute("aria-pressed", b.dataset.setOs === os));
+  store("os", os);
+  if (push) history.replaceState(null, "", os === "lin" ? "#linux" : "#windows");
+}
+function setTier(t) {
+  root.dataset.tier = t;
+  document.querySelectorAll("[data-set-tier]").forEach(b => b.setAttribute("aria-pressed", b.dataset.setTier === t));
+  store("tier", t);
+}
+
+document.querySelectorAll("[data-set-os]").forEach(b => b.onclick = () => setOS(b.dataset.setOs, true));
+document.querySelectorAll("[data-set-tier]").forEach(b => b.onclick = () => setTier(b.dataset.setTier));
+document.querySelectorAll(".copy").forEach(b => b.onclick = () => {
+  navigator.clipboard.writeText(b.previousElementSibling.innerText).then(() => {
+    b.textContent = "copied"; b.classList.add("done");
+    setTimeout(() => { b.textContent = "copy"; b.classList.remove("done"); }, 1500);
+  });
+});
+
+// #linux / #windows in the link wins, so you can send people straight to their version.
+const h = location.hash.toLowerCase();
+setOS(h === "#linux" ? "lin" : h === "#windows" ? "win" : store("os") || "win", false);
+setTier(store("tier") || "bf16");
+</script>
 </body>
 </html>
